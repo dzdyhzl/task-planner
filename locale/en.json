@@ -1,0 +1,7 @@
+{
+  "meta": {
+    "title": "Task planner",
+    "description": "Guides the agent to decompose new requests into a structured plan (goal, steps, needed plugins, acceptance criteria) with the task_plan tool before executing, and to track the plan with the todo list. Planning requirements live only in the system prompt; the installed-plugin catalog is published through the runtime-context snapshot and updates only when the catalog changes, avoiding per-turn context repetition.",
+    "detail": "docs/DETAIL.md"
+  }
+}

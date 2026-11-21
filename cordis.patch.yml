@@ -1,0 +1,4 @@
+- insert:
+    - id: task-planner
+      name: '@local/task-planner'
+      config: {}
