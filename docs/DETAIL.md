@@ -15,7 +15,7 @@ The guidance is advisory: nothing is intercepted, and every registration is clea
 
 1. The model judges the incoming request. Simple lookups and short questions skip planning.
 2. For non-trivial work it calls `task_plan`, naming the plugins it will rely on from the directory. Invalid arguments (empty goal, no steps, invalid `depends_on` references, unnamed plugin purposes) are rejected with a message the model can fix. Plugin names that do not match the live catalog are listed under `unknownPlugins` for the model to correct or drop — the plan itself is not blocked.
-3. After a successful plan it syncs the steps with `todo_write` and executes step by step.
+3. After a successful plan it syncs the steps with `todo_write` and executes step by step. While planning, it also weighs parallelization: independent steps with no shared write scope can be delegated to multiple subagents started together; steps that write the same files or depend on earlier steps stay sequential via `depends_on`.
 
 ## Configuration
 
