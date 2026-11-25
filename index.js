@@ -63,6 +63,7 @@ const DEFAULT_POLICY_TEXT = [
   '- For simple lookups, short questions, greetings, or one-shot answers, respond directly; do not plan.',
   '- If a request turns out to be bigger than it first appeared, call `task_plan` before continuing.',
   '- When planning, actively consider whether parts of the work can run in parallel: independent steps with no shared write scope can be delegated to multiple subagents started together, while steps that write the same files or depend on earlier steps stay sequential (order them with `depends_on`).',
+  '- After finishing a task, close it out: bring the project\'s cognition index back into alignment (cognition_scan, then cognition_update_entries / cognition_remove_entries until cognition_verify returns aligned=true), and if the workspace is not a git repository yet, ask the user once whether to create a repository (e.g. on GitHub) and push, respecting a previously declined answer.',
   '',
   'Keep the three planning models distinct: `task_plan` is the upfront structured plan (goal, assumptions, steps, acceptance, risks); `todo_write` mirrors its steps for execution tracking while you work; `create_goal` is only for long-running objectives that must survive across automatic continuation rounds. Do not duplicate one plan into all three; update `todo_write` when steps change and leave `task_plan` as the record of the original intent.',
 ].join('\n')
