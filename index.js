@@ -17,6 +17,11 @@
 
 import { randomUUID } from 'node:crypto'
 
+// Process-constant install anchor, read once instead of per call.
+const INSTALL_ANCHOR = typeof process.env.DSH_INSTALL_DIR === 'string' && process.env.DSH_INSTALL_DIR.length > 0
+  ? process.env.DSH_INSTALL_DIR
+  : undefined
+
 /** Host services this plugin requires. */
 export const inject = ['tools', 'systemPrompt']
 
@@ -34,12 +39,11 @@ async function importHostPackage(specifier) {
   } catch {
     // Fall through to the installation anchor.
   }
-  const anchor = process.env.DSH_INSTALL_DIR
-  if (anchor !== undefined && anchor.length > 0) {
+  if (INSTALL_ANCHOR !== undefined) {
     const { createRequire } = await import('node:module')
     const { join } = await import('node:path')
     const { pathToFileURL } = await import('node:url')
-    const hostRequire = createRequire(join(anchor, 'package.json'))
+    const hostRequire = createRequire(join(INSTALL_ANCHOR, 'package.json'))
     try {
       return hostRequire(specifier)
     } catch {
@@ -148,11 +152,6 @@ function pickText(text) {
 // The inventory reader needs a Context; `apply` assigns it before any use.
 let ctxCatalog
 
-// Process-constant install anchor, read once instead of per entry.
-const INSTALL_ANCHOR = typeof process.env.DSH_INSTALL_DIR === 'string' && process.env.DSH_INSTALL_DIR.length > 0
-  ? process.env.DSH_INSTALL_DIR
-  : undefined
-
 /**
  * Cached catalog with a cheap fingerprint of the Loader entry list. The
  * fingerprint captures every input the catalog derives from (entry names,
@@ -229,7 +228,8 @@ function readCatalog() {
     catalogCache = { fingerprint, rows, known, suffix: undefined, maxEntries: -1 }
     return catalogCache
   } catch {
-    return catalogCache.fingerprint === '' ? { ...catalogCache, rows: [], known: new Set() } : catalogCache
+    // Any unexpected Loader failure leaves the previous (or initial empty) cache.
+    return catalogCache
   }
 }
 
@@ -414,13 +414,9 @@ function buildPlanTool(getCatalog, maxCatalogEntries) {
   /** Resolve recognized plugin names and flag the rest, against the live catalog. */
   const resolvePlugins = (pluginRows) => {
     if (pluginRows.length === 0) return { plugins: [], unknownPlugins: [] }
-    let known
-    try {
-      known = getCatalog().known
-    } catch {
-      known = undefined
-    }
-    if (known === undefined || known.size === 0) {
+    // readCatalog never throws; an unavailable catalog yields an empty `known`.
+    const known = getCatalog().known
+    if (known.size === 0) {
       // No catalog available: keep the rows without flagging anything.
       return { plugins: pluginRows, unknownPlugins: [] }
     }
@@ -492,7 +488,7 @@ async function buildMessageFactory() {
 export async function apply(ctx, config) {
   // The loader already validated through Config; normalize again only to be
   // robust when no schema export is honored.
-  const resolved = config && typeof config === 'object' ? normalizeConfig(config) : normalizeConfig({})
+  const resolved = normalizeConfig(config)
   if (!resolved.enabled) return
   ctxCatalog = ctx
 
